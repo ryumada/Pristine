@@ -17,7 +17,8 @@
             min: "Minimum value for this field is ${1}",
             max: "Maximum value for this field is ${1}",
             pattern: "Please match the requested format",
-            equals: "The two fields do not match"
+            equals: "The two fields do not match",
+            default: "Please enter a correct value"
         }
     };
 
@@ -250,6 +251,8 @@
                         errors.push(tmpl.apply(field.messages[currentLocale][validator.name], params));
                     } else if (lang[currentLocale] && lang[currentLocale][validator.name]) {
                         errors.push(tmpl.apply(lang[currentLocale][validator.name], params));
+                    } else {
+                        errors.push(tmpl.apply(lang[currentLocale].default, params));
                     }
 
                     if (validator.halt === true) {
@@ -292,14 +295,14 @@
             if (field.errorElements) {
                 return field.errorElements;
             }
-            var errorClassElement = findAncestor(field.input, self.config.classTo);
-            var errorTextParent = null,
+            var errorClassElement = null,
                 errorTextElement = null;
             if (self.config.classTo === self.config.errorTextParent) {
-                errorTextParent = errorClassElement;
+                errorClassElement = findAncestor(field.input, self.config.classTo);
             } else {
-                errorTextParent = errorClassElement.querySelector('.' + self.config.errorTextParent);
+                errorClassElement = findAncestor(field.input, self.config.errorTextParent);
             }
+            var errorTextParent = errorClassElement;
             if (errorTextParent) {
                 errorTextElement = errorTextParent.querySelector('.' + PRISTINE_ERROR);
                 if (!errorTextElement) {
@@ -318,8 +321,13 @@
                 errorTextElement = errorElements[1];
 
             if (errorClassElement) {
-                errorClassElement.classList.remove(self.config.successClass);
-                errorClassElement.classList.add(self.config.errorClass);
+                if (self.config.classTo === self.config.errorTextParent) {
+                    errorClassElement.classList.remove(self.config.successClass);
+                    errorClassElement.classList.add(self.config.errorClass);
+                } else {
+                    field.input.classList.remove(self.config.successClass);
+                    field.input.classList.add(self.config.errorClass);
+                }
             }
             if (errorTextElement) {
                 errorTextElement.innerHTML = field.errors.join('<br/>');
@@ -343,9 +351,15 @@
             var errorClassElement = errorElements[0],
                 errorTextElement = errorElements[1];
             if (errorClassElement) {
-                // IE > 9 doesn't support multiple class removal
-                errorClassElement.classList.remove(self.config.errorClass);
-                errorClassElement.classList.remove(self.config.successClass);
+                if (self.config.classTo === self.config.errorTextParent) {
+                    // IE > 9 doesn't support multiple class removal
+                    errorClassElement.classList.remove(self.config.errorClass);
+                    errorClassElement.classList.remove(self.config.successClass);
+                } else {
+                    // IE > 9 doesn't support multiple class removal
+                    field.input.classList.remove(self.config.errorClass);
+                    field.input.classList.remove(self.config.successClass);
+                }
             }
             if (errorTextElement) {
                 errorTextElement.innerHTML = '';
@@ -356,7 +370,11 @@
 
         function _showSuccess(field) {
             var errorClassElement = _removeError(field)[0];
-            errorClassElement && errorClassElement.classList.add(self.config.successClass);
+            if (self.config.classTo === self.config.errorTextParent) {
+                errorClassElement && errorClassElement.classList.add(self.config.successClass);
+            } else {
+                errorClassElement && field.input.classList.add(self.config.successClass);
+            }
         }
 
         /***
